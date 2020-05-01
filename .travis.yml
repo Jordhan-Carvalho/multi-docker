@@ -1,0 +1,26 @@
+sudo: required
+
+language: generic
+
+services:
+  - docker
+# Run tests
+before_install:
+  - docker build -t jordhancarvalho/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true jordhancarvalho/react-test npm test
+
+# Build all the prod Versions
+after_success:
+  - docker build -t jordhancarvalho/multi-client ./client
+  - docker build -t jordhancarvalho/multi-nginx ./nginx
+  - docker build -t jordhancarvalho/multi-server ./server
+  - docker build -t jordhancarvalho/multi-worker ./worker
+  # Login in to the docker CLI... It takes the DOCKER_PASS e usa ele como input do proximo command
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take the images and push to dockerHub
+  - docker push jordhancarvalho/multi-client
+  - docker push jordhancarvalho/multi-nginx
+  - docker push jordhancarvalho/multi-server
+  - docker push jordhancarvalho/multi-worker
